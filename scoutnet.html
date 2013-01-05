@@ -15,7 +15,7 @@
   var scout_modified_header;
   var scout_modified_data;
 
-  function sContains(theString, toCheck) {
+   function sContains(theString, toCheck) {
     return (theString.indexOf(toCheck) >= 0);
   }
 
@@ -23,6 +23,10 @@
     if(isAPIAvailable()) {
       $('#files').bind('change', handleFileSelect);
     }
+
+    var css = '<link rel="stylesheet" href="style.css" type="text/css" />';
+    $('#tableframe').contents().find("head").append(css);
+
   });
 
   function isAPIAvailable() {
@@ -63,7 +67,7 @@
     loadData(file);
 
     // post the results
-    $('#list').append(output);
+    $('#list').html(output);
 
     $('#update').click( function(event){handleUpdate();});
   }
@@ -75,6 +79,9 @@
       var csv = event.target.result;
       var data = $.csv.toArrays(csv);
       var first = 1;
+
+      scout_header = new Array();
+      scout_data = new Array();
       for(row in data) {
         if(first == 1)
         {
@@ -87,9 +94,6 @@
         }
       }
 
-      scout_modified_header = scout_header;
-      scout_modified_data = scout_data;
-
       handleUpdate();
       printTable();
     };
@@ -98,7 +102,7 @@
 
 
   function printTable() {
-      var html = '';
+      var html = '<table class="data">';
       html += '<tr>\r\n';
       for(var item in scout_modified_header) {
           html += '<td><b>' + scout_modified_header[item] + '</b></td>\r\n';
@@ -112,8 +116,9 @@
         }
         html += '</tr>\r\n';
       }
+      html += '</html>\r\n';
 
-      $('#contents').html(html);
+      $('#tableframe').contents().find("body").html(html);
   }
 
   function printCSV() {
@@ -134,6 +139,45 @@
       $('#csvframe').contents().find("body").html(html);
   }
 
+
+  function handleCleanphone() {
+    var phoneLabels = Array();
+
+    /* find all labels that contains "telefon" or "mobil" */
+
+    for (var i=0; i < scout_header.length; i++)
+    {
+        if (sContains(scout_header[i], "telefon") ||
+            sContains(scout_header[i], "mobil"))
+        {
+            phoneLabels.push(i); /* compensate for new element */
+        }
+   }
+
+    for (var member=0; member < scout_modified_data.length; member++)
+    {
+        for (var label=0; label < phoneLabels.length; label++)
+        {
+            var l = phoneLabels[label];
+
+            if (scout_modified_data[member][l] == undefined ||
+                scout_modified_data[member][l] == "")
+            {
+                continue;
+            }
+            if (scout_modified_data[member][l].indexOf("46 ",0)===0)
+            {
+                scout_modified_data[member][l] =
+                              scout_modified_data[member][l].substr(3);
+            }
+            else if (scout_modified_data[member][l].indexOf("+46 ",0)===0)
+            {
+                scout_modified_data[member][l] =
+                             scout_modified_data[member][l].substr(4);
+            }
+        }
+     }
+  }
 
   function handleMergephone() {
     var phoneLabels = Array();
@@ -163,17 +207,19 @@
 
         for (var label=0; label < phoneLabels.length; label++)
         {
-            if (scout_modified_data[member][phoneLabels[label]] != "")
+            var l = phoneLabels[label];
+
+            if (scout_modified_data[member][l] != "")
             {
                 if (scout_modified_data[member][0] == "")
                 {
-                    scout_modified_data[member][0] = (scout_modified_header[phoneLabels[label]] + ": " +
-                                                   scout_modified_data[member][phoneLabels[label]]);
+                    scout_modified_data[member][0] = (scout_modified_header[l] + ": " +
+                                                   scout_modified_data[member][l]);
                 }
                 else
                 {
-                    scout_modified_data[member][0] += (", " + scout_modified_header[phoneLabels[label]] + ": " +
-                                                   scout_modified_data[member][phoneLabels[label]]);
+                    scout_modified_data[member][0] += (", " + scout_modified_header[l] + ": " +
+                                                   scout_modified_data[member][l]);
 
                 }
             }
@@ -181,9 +227,26 @@
      }
   }
 
-  function handleGroupSort(a, b)
+  function handleSort(a, b, c)
   {
-     var sortorder = ["avdelning", "förnamn", "efternamn"];
+     var sortorder;
+     if (c === 0)
+     {
+         sortorder = ["avdelning", "förnamn", "efternamn"];
+     }
+     else if (c === 1)
+     {
+         sortorder = ["postnr",
+                      "adress, rad 1",
+                      "adress, rad 2",
+                      "adress, rad 3",
+                      "efternamn",
+                      "förnamn"];
+     }
+     else
+     {
+         /* Here be dragons */
+     }
      var s_index = Array();
 
      for (s in sortorder)
@@ -191,7 +254,8 @@
         var ss = sortorder[s];
         for (var i=0; i<scout_modified_header.length; i++)
         {
-            if (scout_modified_header[i].toLowerCase() == sortorder[s].toLowerCase())
+            if (scout_modified_header[i].toLowerCase() ==
+                sortorder[s].toLowerCase())
             {
                 s_index.push(i);
             }
@@ -200,6 +264,18 @@
 
      for (var i=0; i < s_index.length; i++)
      {
+         if (a[s_index[i]] == undefined ||
+             b[s_index[i]] == undefined)
+         {
+             continue;
+         }
+
+         if (a[s_index[i]] == "" ||
+             b[s_index[i]] == "")
+         {
+             continue;
+         }
+
          if (a[s_index[i]].toLowerCase() <
              b[s_index[i]].toLowerCase())
          {
@@ -225,6 +301,11 @@
           scout_modified_data.push(scout_data[i].slice());
       }
 
+      if ($('#cleanPhone').is(':checked'))
+      {
+          handleCleanphone();
+      }
+
       if ($('#mergePhone').is(':checked'))
       {
           handleMergephone();
@@ -232,7 +313,12 @@
 
       if ($('#groupSort').is(':checked'))
       {
-          scout_modified_data.sort(handleGroupSort);
+          scout_modified_data.sort(function(a,b){return handleSort(a,b,0)});
+      }
+
+      else if ($('#addressSort').is(':checked'))
+      {
+          scout_modified_data.sort(function(a,b){return handleSort(a,b,1)});
       }
 
       printTable();
@@ -242,18 +328,29 @@
 </head>
 
 <body>
-<div id=inputs class=clearfix>
-  <input type=file id="files" name=files[] multiple />
-  Slå ihop telefon <input id="mergePhone" type="checkbox" />
-  Sortera efter grupper <input id="groupSort" type="checkbox" />
+<h1>Massör för scoutnet data</h1>
+<h3>Välj CSV-fil att läsa in</h3>
+<input type=file id="files" name=files[] multiple /><br/>
+<table class="invisible">
+  <tr><td>Slå ihop telefonnummer</td>
+    <td><input id="mergePhone" type="checkbox" /></td></tr>
+  <tr><td>Ta bort svensk landskod från telefonnummer ("+46"/"46")</td>
+    <td><input id="cleanPhone" type="checkbox" /></td></tr>
+  <tr><td>Sortera efter grupper</td>
+    <td><input id="groupSort" type="checkbox" /></td></tr>
+  <tr><td>Sortera efter postnummer, adress, efternamn</td>
+    <td><input id="addressSort" type="checkbox" /></td></tr>
+</table>
   <button id="update">Uppdatera</button>
-</div>
 <hr />
 <output id=list>
 </output>
 <hr />
-<table id=contents style="width:100%; height:400px;" border>
-</table>
+<h2>Data i tabell-form</h2>
+<!--<table id=contents>
+</table>-->
+<iframe id="tableframe">
+</iframe>
 <h2>CSV-data</h2>
 <p>
 Kopiera allt innehåll i framen nedan (CTRL+A, CTRL+C) och klistra in i notepad. Spara som "valfritt filnamn.csv". Den sparade CSV-filen kan du sen öppna i excel eller openoffice.org.
