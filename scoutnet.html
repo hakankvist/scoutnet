@@ -278,8 +278,6 @@
           handleMergephone();
       }
 
-      alert(scout_modified_header.join(", "));
-
       var sortOrder = $('#sort').val();
       if (sortOrder != "scoutnet")
       {
@@ -316,8 +314,6 @@
           scout_modified_data.sort(function(a,b){return handleSort(a,b,s_index)});
       }
 
-      alert(scout_modified_header.join(", "));
-
       var columnChoice = $('#columns').val();
       if (columnChoice != "scoutnet")
       {
@@ -346,7 +342,6 @@
                  if (scout_modified_header[i].toLowerCase() ===
                      columns[s].toLowerCase())
                 {
-//                     alert(scout_modified_header[i].toLowerCase() + " : " + columns[s].toLowerCase());
                      s_index.push(i);
                 }
              }
@@ -358,7 +353,6 @@
                   s_index.map(function(x){return scout_modified_data[i][x];});
           }
 
-          alert(scout_modified_header.join(", "));
           scout_modified_header =
                  s_index.map(function(x){return scout_modified_header[x];});
       }
