@@ -227,41 +227,8 @@
      }
   }
 
-  function handleSort(a, b, c)
+  function handleSort(a, b, s_index)
   {
-     var sortorder;
-     if (c === 0)
-     {
-         sortorder = ["avdelning", "förnamn", "efternamn"];
-     }
-     else if (c === 1)
-     {
-         sortorder = ["postnr",
-                      "adress, rad 1",
-                      "adress, rad 2",
-                      "adress, rad 3",
-                      "efternamn",
-                      "förnamn"];
-     }
-     else
-     {
-         /* Here be dragons */
-     }
-     var s_index = Array();
-
-     for (s in sortorder)
-     {
-        var ss = sortorder[s];
-        for (var i=0; i<scout_modified_header.length; i++)
-        {
-            if (scout_modified_header[i].toLowerCase() ==
-                sortorder[s].toLowerCase())
-            {
-                s_index.push(i);
-            }
-        }
-     }
-
      for (var i=0; i < s_index.length; i++)
      {
          if (a[s_index[i]] == undefined ||
@@ -311,14 +278,89 @@
           handleMergephone();
       }
 
-      if ($('#groupSort').is(':checked'))
+      alert(scout_modified_header.join(", "));
+
+      var sortOrder = $('#sort').val();
+      if (sortOrder != "scoutnet")
       {
-          scout_modified_data.sort(function(a,b){return handleSort(a,b,0)});
+          var s_index = Array();
+          var sortorder = Array();
+
+          if (sortOrder == "groupSort" )
+          {
+               sortorder = ["avdelning", "förnamn", "efternamn"];
+          }
+          else if (sortOrder == "addressSort")
+          {
+               sortorder = ["postnr",
+                            "adress, rad 1",
+                            "adress, rad 2",
+                            "adress, rad 3",
+                            "efternamn",
+                            "förnamn"];
+          }
+
+          for (s in sortorder)
+          {
+             var ss = sortorder[s];
+             for (var i=0; i<scout_modified_header.length; i++)
+             {
+                 if (scout_modified_header[i].toLowerCase() ===
+                     sortorder[s].toLowerCase())
+                {
+                     s_index.push(i);
+                }
+             }
+          }
+
+          scout_modified_data.sort(function(a,b){return handleSort(a,b,s_index)});
       }
 
-      else if ($('#addressSort').is(':checked'))
+      alert(scout_modified_header.join(", "));
+
+      var columnChoice = $('#columns').val();
+      if (columnChoice != "scoutnet")
       {
-          scout_modified_data.sort(function(a,b){return handleSort(a,b,1)});
+          var s_index = Array();
+          var columns = Array();
+
+          if (columnChoice == "patrik" )
+          {
+               columns = ["avdelning",
+                          "förnamn",
+                          "efternamn",
+                          "c/o (ange c/o i rutan)",
+                          "adress, rad 1",
+                          "adress, rad 2",
+                          "adress, rad 3",
+                          "postnr",
+                          "postort",
+                          "e-post",
+                          "totaltelefon"];
+          }
+
+          for (var s=0; s < columns.length; s++)
+          {
+             for (var i=0; i<scout_modified_header.length; i++)
+             {
+                 if (scout_modified_header[i].toLowerCase() ===
+                     columns[s].toLowerCase())
+                {
+//                     alert(scout_modified_header[i].toLowerCase() + " : " + columns[s].toLowerCase());
+                     s_index.push(i);
+                }
+             }
+          }
+
+          for (var i=0; i < scout_modified_data.length; i++)
+          {
+              scout_modified_data[i] =
+                  s_index.map(function(x){return scout_modified_data[i][x];});
+          }
+
+          alert(scout_modified_header.join(", "));
+          scout_modified_header =
+                 s_index.map(function(x){return scout_modified_header[x];});
       }
 
       printTable();
@@ -343,10 +385,17 @@ Välj CSV-fil att läsa in: <input type=file id="files" name=files[] multiple />
     <td><input id="mergePhone" type="checkbox" /></td></tr>
   <tr><td>Ta bort svensk landskod från telefonnummer ("+46"/"46")</td>
     <td><input id="cleanPhone" type="checkbox" /></td></tr>
-  <tr><td>Sortera efter grupper</td>
-    <td><input id="groupSort" type="checkbox" /></td></tr>
-  <tr><td>Sortera efter postnummer, adress, efternamn</td>
-    <td><input id="addressSort" type="checkbox" /></td></tr>
+  <tr><td>Sorteringsordning</td>
+    <td><select id="sort">
+        <option value="scoutnet">scoutnet</option>
+        <option value="groupSort">grupper</option>
+        <option value="addressSort">postnummer, adress, efternamn</option>
+    </select></td></tr>
+  <tr><td>Kolumner</td>
+    <td><select id="columns">
+        <option value="scoutnet">scoutnet</option>
+        <option value="patrik">namn, adress, ihopslagen telefon, e-post</option>
+    </select></td></tr>
 </table>
   <button id="update">Uppdatera</button>
 <hr />
