@@ -16,6 +16,7 @@
 
   var scout_modified_header;
   var scout_modified_data;
+  var scout_emailIndex;
 
    function sContains(theString, toCheck) {
     return (theString.indexOf(toCheck) >= 0);
@@ -97,9 +98,9 @@
       }
 
       addGroups();
+      addEmails();
 
       handleUpdate();
-      printTable();
     };
     reader.onerror = function(){ alert('Unable to read ' + file.fileName); };
   }
@@ -133,6 +134,29 @@
          var html = '<input type="checkbox" id="group'+i+'" checked="checked"/>'
          html += '<label for="group'+i+'">'+scout_groups[i]+'</label>';
          $('#groups').append(html);
+     }
+  }
+
+  function addEmails(){
+     scout_email = new Array();
+
+     for (var i=0; i < scout_header.length; i++)
+     {
+         if (sContains(scout_header[i].toLowerCase(), "e-post") &&
+             !sContains(scout_header[i].toLowerCase(), "distriktet") &&
+             !sContains(scout_header[i].toLowerCase(), "kåren"))
+         {
+             scout_email.push(scout_header[i].toLowerCase());
+         }
+     }
+
+     scout_email.sort();
+
+     for (var i=0; i < scout_email.length; i++)
+     {
+         var html = '<input type="checkbox" id="email'+i+'" checked="checked"/>'
+         html += '<label for="email'+i+'">'+scout_email[i]+'</label>, ';
+         $('#emails').append(html);
      }
   }
 
@@ -172,6 +196,61 @@
       html += '</pre>'
 
       $('#csvframe').contents().find("body").html(html);
+  }
+
+  function printEmail()
+  {
+     var addressIndex = new Array();
+     var scout_emailIndex = new Array();
+     var addresses = new Array();
+     var returnAddresses = new Array();
+
+     for (var i=0; i<scout_email.length; i++)
+     {
+        for (var j=0; j<scout_modified_header.length; j++)
+        {
+            if (scout_modified_header[j].toLowerCase() ==
+                scout_email[i])
+            {
+                scout_emailIndex.push(j);
+            }
+        }
+     }
+
+      for(var row in scout_modified_data)
+      {
+        for(var i=0; i<scout_emailIndex.length; i++)
+        {
+           var j=scout_emailIndex[i];
+           if (scout_modified_data[row][j] != "")
+           {
+             addresses.push(scout_modified_data[row][j].toLowerCase());
+           }
+        }
+      }
+
+     addresses.sort();
+
+     var first = 1;
+     for(var i=0; i<addresses.length; i++)
+     {
+         if (first == 1)
+         {
+             returnAddresses.push(addresses[i]);
+             first = 0;
+         }
+         else if (addresses[i] != addresses[i-1])
+         {
+             returnAddresses.push(addresses[i]);
+         }
+     }
+
+     var ma = returnAddresses.join(", ");
+     $('#emailfield').val(ma);
+     var html = '<a href="mailto:' + ma +
+                 '">skicka mail till valda addresser!</a>';
+     alert(html);
+     $('#mailto').append(html);
   }
 
   function removeGroups() {
@@ -411,6 +490,7 @@
 
       printTable();
       printCSV();
+      printEmail();
   }
 </script>
 </head>
@@ -446,6 +526,9 @@ Välj CSV-fil att läsa in: <input type=file id="files" name=files[] multiple />
 <p id="groups">
 Grupper:
 </p>
+<p id="emails">
+E-post adresser i email-listan (längst ner på sidan):
+</p>
   <button id="update">Uppdatera</button>
 <hr />
 <output id=list>
@@ -462,4 +545,8 @@ Kopiera allt innehåll i framen nedan (CTRL+A, CTRL+C) och klistra in i notepad.
 </p>
 <iframe id="csvframe">
 </iframe>
+<h2>E-post lista</h2>
+<input type="text" id="emailfield" size="80"/>
+<p id="mailto">
+</p>
 </body>
