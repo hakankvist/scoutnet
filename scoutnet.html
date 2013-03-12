@@ -111,7 +111,7 @@
 
      for (var i=0; i < scout_header.length; i++)
      {
-         if (scout_header[i].toLowerCase() === "avdelning")
+         if (scout_header[i].toLowerCase() === "avdelning" || scout_header[i].toLowerCase() === "avdelningstillhörighet")
          {
              scout_groupIndex = i;
              break;
@@ -249,7 +249,6 @@
      $('#emailfield').val(ma);
      var html = '<a href="mailto:' + ma +
                  '">skicka mail till valda addresser!</a>';
-     alert(html);
      $('#mailto').append(html);
   }
 
